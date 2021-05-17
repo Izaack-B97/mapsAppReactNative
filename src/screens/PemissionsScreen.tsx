@@ -21,7 +21,7 @@ export const PermissionsScreen = () => {
             <Text style={ styles.title }>Es necesario el uso de GPS para usar esta aplicacion</Text>
             <BlackButton 
                 title='Permitir uso del GPS' 
-                onPress={() => console.log('hola')  }
+                onPress={ askLocationPermission  }
             />
             <Text style={{ ...styles.title, marginBottom:0, marginTop: 10}} >{ JSON.stringify( permissions, null, 3 ) }</Text>
         </View>
