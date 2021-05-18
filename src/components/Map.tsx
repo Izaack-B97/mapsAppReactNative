@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 import { useLocation } from '../hooks/useLocation';
 import { LoadingScreen } from '../screens/LoadingScreen';
 import { Fab } from './Fab';
@@ -15,7 +15,8 @@ export const Map = ( { markers } : Props ) => {
         hasLocation, 
         getCurrentLocation, 
         followUserLocation, 
-        currentPosition 
+        currentPosition,
+        routeLines
     } = useLocation();
 
     const mapViewRef = useRef<MapView>();
@@ -25,7 +26,7 @@ export const Map = ( { markers } : Props ) => {
         let remove : () => void;
         followUserLocation()
             .then(functionRemove => remove = functionRemove );
-            
+
         return () => {
             remove();
         }
@@ -34,7 +35,6 @@ export const Map = ( { markers } : Props ) => {
     // Following the user
     useEffect(() => {
         if ( !followingRef.current ) return;
-
         const { latitude, longitude } = currentPosition;
         mapViewRef.current?.animateCamera({
             center: {
@@ -73,7 +73,8 @@ export const Map = ( { markers } : Props ) => {
                     longitudeDelta: 0.0421,
                 }}
                 onTouchStart={ () => followingRef.current = false }
-            >
+            >   
+                <Polyline coordinates={ routeLines } strokeWidth={ 3 } strokeColor="black" />
                 {/* <Marker
                     image={ require('../../assets/custom-marker.png') }
                     coordinate={{

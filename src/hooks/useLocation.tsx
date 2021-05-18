@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import * as Location from 'expo-location';
-import { Platform } from "react-native";
 import { Locations } from '../interfaces/appInterfaces';
 
 export const useLocation = () => {
@@ -8,7 +7,7 @@ export const useLocation = () => {
     const [ hasLocation, setHasLocation ] = useState( true );
     const [ initialPosition, setInitialPosition ] = useState<Locations>({ latitude: 0, longitude: 0 });
     const [ currentPosition, setCurrentPosition ] = useState<Locations>({ latitude: 0, longitude: 0 });
-    const cleanWatchRef = useRef<() => void>();
+    const [ routeLines, setRouteLines ] = useState<Locations[]>([]);
 
     const getCurrentLocation  = async () => {
         const resp = await Location.getCurrentPositionAsync({ accuracy: Location.LocationAccuracy.BestForNavigation });
@@ -19,22 +18,36 @@ export const useLocation = () => {
     const followUserLocation = async () => {
         const subscriber = await Location.watchPositionAsync({
             accuracy: Location.LocationAccuracy.BestForNavigation,
-            timeInterval: 5000,
-            distanceInterval: 100,
+            timeInterval: 1000,
+            distanceInterval: 1,
             // mayShowUserSettingsDialog: true
-        }, ( { coords: { latitude, longitude } } ) => setCurrentPosition({ latitude, longitude }) );
+        }, 
+        ( { coords: { latitude, longitude } } ) => {
+            const location : Locations = {
+                latitude,
+                longitude
+            }
+        
+            setCurrentPosition( location );
+            setRouteLines( routes => [ ...routes, location ] );
+            
+            // console.log( routeLines )
+            
+        });
 
         return subscriber.remove; // Remove the watch
     }
-    
-    useEffect(() => {
-        
+
+    useEffect(() => {       
         getCurrentLocation()
-            .then(coords => {
-                setInitialPosition({
-                    latitude: coords.latitude,
-                    longitude: coords.longitude
-                });
+            .then(({ latitude, longitude }) => {
+                const location : Locations = {
+                    latitude,
+                    longitude
+                }
+
+                setInitialPosition( location );
+                setRouteLines( routes => [ ...routes, location ] );
                 setHasLocation( false );
             })
 
@@ -46,5 +59,6 @@ export const useLocation = () => {
         getCurrentLocation,
         followUserLocation,
         currentPosition,
+        routeLines
     }
 }
