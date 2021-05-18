@@ -1,5 +1,4 @@
-import React, { useRef } from 'react'
-import { ActivityIndicator, View } from 'react-native';
+import React, { useEffect, useRef } from 'react'
 import MapView, { Marker } from 'react-native-maps';
 import { useLocation } from '../hooks/useLocation';
 import { LoadingScreen } from '../screens/LoadingScreen';
@@ -11,11 +10,43 @@ interface Props {
 
 export const Map = ( { markers } : Props ) => {
     
-    const { initialPosition , hasLocation, getCurrentLocation } = useLocation();
+    const { 
+        initialPosition, 
+        hasLocation, 
+        getCurrentLocation, 
+        followUserLocation, 
+        currentPosition 
+    } = useLocation();
+
     const mapViewRef = useRef<MapView>();
+    const followingRef = useRef<Boolean>( true );
+
+    useEffect(() => {
+        let remove : () => void;
+        followUserLocation()
+            .then(functionRemove => remove = functionRemove );
+            
+        return () => {
+            remove();
+        }
+    }, []);
+
+    // Following the user
+    useEffect(() => {
+        if ( !followingRef.current ) return;
+
+        const { latitude, longitude } = currentPosition;
+        mapViewRef.current?.animateCamera({
+            center: {
+                latitude,
+                longitude
+            }
+        });
+    }, [ currentPosition ])
 
     const centerPosition = async () => {
         const { latitude, longitude } = await getCurrentLocation();
+        followingRef.current = true;
         mapViewRef.current!.animateCamera({
             center: {
                 latitude,
@@ -41,6 +72,7 @@ export const Map = ( { markers } : Props ) => {
                     latitudeDelta: 0.0922,
                     longitudeDelta: 0.0421,
                 }}
+                onTouchStart={ () => followingRef.current = false }
             >
                 {/* <Marker
                     image={ require('../../assets/custom-marker.png') }
