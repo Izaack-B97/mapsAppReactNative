@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as Location from 'expo-location';
 import { Locations } from '../interfaces/appInterfaces';
 
@@ -8,6 +8,16 @@ export const useLocation = () => {
     const [ initialPosition, setInitialPosition ] = useState<Locations>({ latitude: 0, longitude: 0 });
     const [ currentPosition, setCurrentPosition ] = useState<Locations>({ latitude: 0, longitude: 0 });
     const [ routeLines, setRouteLines ] = useState<Locations[]>([]);
+
+    const isMounted = useRef( true );
+
+    useEffect(() => {
+        isMounted.current = true
+        return () => {
+            isMounted.current = false;            
+        }
+    }, [])
+    
 
     const getCurrentLocation  = async () => {
         const resp = await Location.getCurrentPositionAsync({ accuracy: Location.LocationAccuracy.BestForNavigation });
@@ -27,12 +37,11 @@ export const useLocation = () => {
                 latitude,
                 longitude
             }
-        
+
+            if( !isMounted.current ) return; // Evita el cambio del state si el componente esta desmontado
+
             setCurrentPosition( location );
             setRouteLines( routes => [ ...routes, location ] );
-            
-            // console.log( routeLines )
-            
         });
 
         return subscriber.remove; // Remove the watch
@@ -45,6 +54,8 @@ export const useLocation = () => {
                     latitude,
                     longitude
                 }
+
+                if( !isMounted.current ) return; // Evita el cambio del state si el componente esta desmontado
 
                 setInitialPosition( location );
                 setRouteLines( routes => [ ...routes, location ] );
